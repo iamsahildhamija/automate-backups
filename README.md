@@ -1,6 +1,6 @@
 # Auto Backups Scheduling & Transferring Script for Linux
 
-**Portable backups for Linux web-hosting workloads using direct cloud APIs and a single Bash program.**
+**Automate backups for Linux web-hosting workloads using direct cloud APIs and a single Bash program.**
 
 This package is a standalone Linux backup utility that discovers common website, database, mail, and configuration locations, lets the administrator choose what to include, creates a validated `.tar.gz` archive with a SHA-256 sidecar, uploads the verified files to configured destinations, and applies retention only after successful verification.
 
