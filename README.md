@@ -106,7 +106,7 @@ Review the discovered source list. Mail authentication maps, panel-specific meta
 
 Database selection saves the current list of names. A database created later is **not automatically added**; rerun `config` to discover/select it. Unsupported database-name characters are reported and need a separate native backup.
 
-## Destinations and verification
+## Verification
 
 | Destination | Transfer | Verification | Resume behavior |
 | --- | --- | --- | --- |
@@ -123,13 +123,13 @@ The SHA-256 sidecar is uploaded and its downloaded contents must match exactly. 
 
 All remote adapters implement authorization/configuration, connection testing, upload, metadata verification, listing, deletion and download. Listing includes pagination where the API paginates. HTTP retries are bounded with backoff/jitter and bounded `Retry-After` handling. Invalid JSON, failed TLS/HTTP requests and quota failures do not count as success.
 
-### Local storage
+### Local Storage
 
 Default: `/var/backups/automate-backups/`, root-owned and mode `0700`. Archives/checksums are private. The wizard accepts another absolute directory. Sources are canonicalized; the backup directory, working data and active Automate Backups credentials are excluded even if a parent source is selected.
 
 Sources `/`, virtual filesystems and known raw database directories are refused. GNU tar stays on one filesystem for each selected source: explicitly add separate mounted source filesystems you want included. Broad `/home`, `/var`, `/etc` or `/srv` selections require confirmation.
 
-### Google Drive setup
+### Google Drive
 
 1. In your own [Google Cloud project](https://console.cloud.google.com/), enable the Google Drive API.
 2. Configure OAuth consent/audience and create a **Desktop app** OAuth client. If the app is in testing, add your account as a test user. Testing-mode refresh tokens may have limited lifetimes; follow Google's production/verification requirements for your audience.
@@ -141,13 +141,13 @@ Sources `/`, virtual filesystems and known raw database directories are refused.
 
 Only app-created/app-used Drive files are requested; full-drive access and deprecated Google out-of-band code flows are not used. No maintainer-owned OAuth secret is embedded. OAuth occurs on Google's own pages; the wizard never asks for a Google account password. Refresh tokens support scheduled operation. The temporary listener binds `127.0.0.1`, expires after ten minutes and closes after receiving a valid callback. No public HTTP port is needed.
 
-### Dropbox setup
+### Dropbox
 
 Create a **Scoped access / App folder** application in the [Dropbox App Console](https://www.dropbox.com/developers/apps). Enable `files.content.write`, `files.content.read`, `files.metadata.read`, and `account_info.read`. Enter its app key and secret.
 
 The official Dropbox URL requests offline access and uses PKCE. Without a redirect URI Dropbox displays a code; paste that code into the private prompt. The refresh token is stored locally. Backups are under the app folder's `Automate Backups/<server-id>-<destination-id>/` namespace. Reauthorize if you change app scopes.
 
-### Microsoft OneDrive setup
+### Microsoft OneDrive
 
 Register your own application in [Microsoft Entra](https://entra.microsoft.com/). Choose the account types you will use, allow **public client flows**, and configure delegated Microsoft Graph `Files.ReadWrite.AppFolder`. The script requests `offline_access` as well.
 
@@ -155,7 +155,7 @@ Enter the application/client ID and tenant (`consumers` for a personal account, 
 
 A dedicated server/destination folder is created under the application's OneDrive app folder. The delegated account must have a provisioned drive. This implementation targets Microsoft Graph's global cloud; sovereign-cloud endpoints are not configurable.
 
-### Amazon S3 setup
+### Amazon S3
 
 Create an existing **general-purpose bucket**, then supply its region, regional HTTPS endpoint, access key and secret key. An optional session token is supported. Temporary AWS credentials do not renew through instance metadata/STS automatically; use `destination reauthorize NAME` to replace them before expiry.
 
@@ -171,11 +171,11 @@ No bucket is created, made public or reconfigured. Configure a bucket lifecycle 
 
 Retention issues ordinary object DELETE requests. With S3 versioning, historical object versions may remain billable; manage noncurrent versions with your own bucket policy. Object Lock/retention policies can prevent deletion, in which case cleanup reports failure and preserves remaining data.
 
-### S3-compatible storage setup
+### S3-compatible Storage
 
 Use the S3-compatible menu option, then provide the HTTPS endpoint **without a bucket or path**, bucket, signing region and credentials. The endpoint must support path-style addressing, SigV4, ListObjectsV2, HEAD, multipart upload and ordinary GET/PUT/DELETE. There is no arbitrary signing override or insecure-HTTP option. The per-destination connection test is mandatory; no specific third-party vendor is claimed as live-tested.
 
-### SFTP setup
+### SFTP
 
 Use a remote Linux account with standard `find`, `stat`, `sha256sum`, SFTP and permission to create its dedicated backup directory. Provide an existing root-readable SSH private key with mode `0600` and unattended authentication suitable for scheduled jobs. A password prompt or an interactive-only SSH agent is unsuitable for nightly operation.
 
@@ -183,15 +183,11 @@ Setup displays host-key fingerprints. **Independently compare them** with your r
 
 The remote base path is deliberately restricted to simple absolute paths without spaces or `..`. A server/destination-specific subdirectory is created with restrictive permissions. SFTP is used for data transfer; SSH runs the remote Linux metadata/hash/list commands. This is not an SFTP-only appliance adapter.
 
-### WebDAV setup
+### WebDAV
 
 Enter an existing HTTPS collection URL, username and password/application password. The server must support MKCOL, Depth-1 PROPFIND, PUT, MOVE, HEAD, GET and DELETE. It creates a dedicated child collection. Redirecting endpoints should be replaced with their final HTTPS collection URL. TLS validation stays enabled.
 
 A PUT streams from disk; the complete archive is not loaded into RAM. A failed PUT may leave a `.partial` object; it is reused/replaced on retry and never included in successful retention. Generic WebDAV cannot promise provider-specific chunking or multipart resume.
-
-### Unsupported providers: pCloud and Box
-
-**Not supported in version 1.0.0.** They are intentionally absent from the menu. Their regional OAuth/API behavior (pCloud) and OAuth rotation/chunked-upload lifecycle (Box) need dedicated implementation and validation before being offered. There are no placeholder provider functions or pretend successful integrations.
 
 ## Scheduling
 
@@ -207,7 +203,7 @@ Without systemd, a tagged root-crontab entry checks once per minute. It evaluate
 
 `flock` serializes backups, destination management, configuration changes and diagnostics. A second operation prints the active PID and start time. Normal backups use `nice` and `ionice` when available. No daemon waits for the next backup.
 
-## Retention and failure handling
+## Retention
 
 ```bash
 sudo automate-backups retention
@@ -264,7 +260,7 @@ Replace `drive` with the name you selected and `BACKUP_ID` with the ID from `lis
 
 `doctor` reports detected sources/clients, binary availability, config validity, free space, scheduler, last backup, authorization state and quota where available. It does not upload/delete data or rotate an expired OAuth token. Use `destination test NAME` to exercise refresh and the complete provider round trip.
 
-## Runtime files
+## Runtime
 
 | Path | Purpose |
 | --- | --- |
@@ -334,7 +330,7 @@ A conservative recovery sequence:
 
 There is deliberately no command that overwrites a live site, database, mailbox or entire `/etc` tree.
 
-## Security and backup integrity
+## Security
 
 **There is no archive-level encryption.** Archives may include private keys, mailbox contents, configuration passwords and database authentication hashes. Local permissions and transport encryption do not turn an archive into an encrypted file. Choose a destination/account whose access controls and provider-side security meet your requirements. SHA-256 checksums detect accidental corruption; unsigned sidecars are not proof against an attacker who can replace both files.
 
@@ -363,7 +359,7 @@ Optional webhook notifications and an automatic updater are not implemented in t
 | Power loss or forced `SIGKILL` | Inspect root-owned `work.*`, local `.partial`, and provider partial/multipart objects once no backup is active. Catchable signals are cleaned automatically; uncatchable termination cannot run traps. |
 | Scheduled backup missing | Inspect the systemd timer or ensure cron/crond is running. Check the configured timezone, last slot, storage and authentication. |
 
-## Uninstall and update
+## Uninstallation
 
 ```bash
 sudo automate-backups uninstall
@@ -376,7 +372,7 @@ After purge, the old server ID/ledger is gone unless independently saved; old re
 
 For an update, download the new `setup.sh` over HTTPS, inspect the diff, run `bash -n setup.sh` and the tests, then run `sudo bash setup.sh` and select **Repair installation**. The installer snapshots the old executable/configuration/schedule and rolls back on activation failure. Packages installed to satisfy missing dependencies are not automatically removed during rollback. Back up the old executable independently if you want a long-term downgrade copy; there is no arbitrary-URL self-updater.
 
-## Testing and contributions
+## Testing
 
 ```bash
 bash -n setup.sh
