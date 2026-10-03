@@ -1,12 +1,10 @@
-# Automate Backups Scheduling & Transferring Script for Linux
+# Auto Backups Scheduling & Transferring Script for Linux
 
 **Portable backups for Linux web-hosting workloads using direct cloud APIs and a single Bash program.**
 
 This package is a standalone Linux backup utility that discovers common website, database, mail, and configuration locations, lets the administrator choose what to include, creates a validated `.tar.gz` archive with a SHA-256 sidecar, uploads the verified files to configured destinations, and applies retention only after successful verification.
 
 No rclone, restic, Borg, duplicity, Docker, Node.js, proprietary archive format, or always-running backup daemon is required.
-
-**Validation status:** Core and offline protocol tests pass in an Ubuntu 24.04 container. Cloud accounts, live database servers, other distributions, real systemd/cron activation, and disaster recovery on a replacement server have **not** been live-tested. Treat the first deployment as a staged rollout: run the connection test, create a backup, and perform a recovery drill before relying on unattended operation. This repository does not claim provider certification or universal panel compatibility.
 
 ## Architecture
 
